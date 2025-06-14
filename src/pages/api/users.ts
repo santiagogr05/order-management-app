@@ -1,4 +1,4 @@
-// This file will contain an Astro API route to fetch products from your Supabase PostgreSQL database.
+// This file will contain an Astro API route to fetch users from your Supabase PostgreSQL database.
 
 import 'dotenv/config'; //imports the variables from the .env file
 import { Client } from 'pg';
@@ -40,7 +40,7 @@ export const GET: APIRoute = async () => {
 
     console.log(`Fetched ${result.rows.length} users.`);
 
-    // Return the fetched products as a JSON response.
+    // Return the fetched users as a JSON response.
     return new Response(JSON.stringify(result.rows), {
       status: 200,
       headers: {
@@ -48,9 +48,9 @@ export const GET: APIRoute = async () => {
       }
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching users:', error);
     return new Response(JSON.stringify({
-      message: 'Failed to fetch products.',
+      message: 'Failed to fetch users.',
       error: error instanceof Error ? error.message : 'An unknown error occurred.'
     }), {
       status: 500,
