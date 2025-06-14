@@ -1,0 +1,88 @@
+
+<div class="bg-[#849389] flex flex-col justify-center items-center space-y-5 w-2/5 h-3/4 rounded-3xl shadow-lg">
+    <div class=" flex flex-col justify-around items-center w-4/5 h-5/6">
+
+        <h1 class="text-3xl font-extrabold">Pedido de Materiales - Mejoramiento de Vivienda</h1>
+
+        <p class="">Por favor diligencia este formulario seleccionando los materiales requeridos. Todos los productos están organizados por categoría. Asegúrate de ingresar las cantidades correctas. Este pedido será procesado para su aprobación.</p>
+        <br>
+
+        <input type="text" list="user-list" id="user-input" class="w-2xs h-10 bg-white-100 border-black border-2 border-black p-4 rounded-xl" placeholder="Seleecionar usuario" />
+        <datalist id="user-list" class="bg-white text-black">
+            
+        </datalist>
+
+        <input type="password" id="password-input" class="w-2xs h-10 bg-white-100 border-2 border-black p-4 rounded-xl" placeholder="Contraseña" />
+        <input id="next-button" type="button" value="Siguiente" class="w-2xs h-10 bg-[#CDC7BF] text-black hover:bg-[#AEA79E] hover:scale-105 cursor-pointer rounded-xl"  />
+        </div>
+</div>
+
+
+<script>
+
+const userList = document.getElementById('user-list') as HTMLDataListElement;
+const userInput = document.getElementById('user-input') as HTMLInputElement;
+const nextButton = document.getElementById('next-button') as HTMLInputElement;
+
+// Fetch users from the API
+async function fetchUsers() {
+    try {
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const users = await response.json();
+        populateUserList(users);
+        return users;
+    } catch (error) {
+        console.error('Error fetching users:', error);
+    }
+};
+
+interface User {
+  name: string;
+  userpassword: string;  
+}
+
+// Populate the datalist with user options
+async function populateUserList(users : User[]) {
+    // const users = await fetchUsers();
+    if (users && users.length > 0) {
+        users.forEach((user : User)=> {
+            const option = document.createElement('option');
+            option.value = user.name; // Assuming user object has a 'name' property
+            userList!.appendChild(option);
+        });    
+    } else {
+        console.warn('No users found or unable to fetch users.');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetchUsers();
+});
+
+nextButton.addEventListener('click', async () => {
+    var username = userInput.value;
+    var password = (document.getElementById('password-input') as HTMLInputElement).value;
+    var users = await fetchUsers();
+    if (users) {
+        const user = users.find((u: User) => u.name === username && u.userpassword === password);
+        if (user) {
+            // Redirect to the next step
+            window.location.href = '/create-order/step2';
+        } else {
+            alert('Usuario o contraseña incorrectos. Por favor, inténtalo de nuevo.');
+        }
+    } else {
+        alert('Error al cargar los usuarios. Por favor, inténtalo de nuevo más tarde.');
+    }
+})
+
+
+
+
+
+
+
+</script>

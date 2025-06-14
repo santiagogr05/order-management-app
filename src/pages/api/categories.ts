@@ -35,10 +35,10 @@ export const GET: APIRoute = async () => {
     await client.connect();
 
     const result = await client.query(
-        'SELECT P.productid, P.productname, P.price, M.measureunit, C.categoryname FROM products P JOIN categories C ON P.categoryid = C.categoryid JOIN measureunits M ON P.measureunit = M.measureunitid ORDER BY productName;'
+        'SELECT C.categoryid, C.categoryname FROM categories C ORDER BY categoryname;'
     );
 
-    console.log(`Fetched ${result.rows.length} products.`);
+    console.log(`Fetched ${result.rows.length} categories.`);
 
     // Return the fetched products as a JSON response.
     return new Response(JSON.stringify(result.rows), {
