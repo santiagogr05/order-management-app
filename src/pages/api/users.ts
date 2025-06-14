@@ -1,65 +1,59 @@
-// This file will contain an Astro API route to fetch users from your Supabase PostgreSQL database.
-
-import 'dotenv/config'; //imports the variables from the .env file
-import { Client } from 'pg';
+// src/pages/api/users.ts
+import { createClient } from '@supabase/supabase-js';
 import type { APIRoute } from 'astro';
+import 'dotenv/config';
 
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 
-const DATABASE_URL = process.env.DATABASE_URL;
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing Supabase environment variables");
+}
 
-//Get all users from the database
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 export const GET: APIRoute = async () => {
-  // Basic validation: Check if the DATABASE_URL environment variable is set.
-  if (!DATABASE_URL) {
-    console.error('DATABASE_URL environment variable is not set.');
-    return new Response(JSON.stringify({
-      message: 'Database connection configuration missing. Please set DATABASE_URL environment variable.'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      name,
+      userpassword,
+      userrole (
+        rolename
+      )
+    `)
+    .order('name');
 
-  // Create a new PostgreSQL client instance using the connection string.
-  const client = new Client({
-    connectionString: DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false 
-    }
-  });
-
-  try {
-    
-    await client.connect();
-
-    const result = await client.query(
-        'SELECT U.name, U.userpassword, R.rolename FROM users U JOIN userrole R ON U.userroleid = R.roleid ORDER BY U.name;'
-    );
-
-    console.log(`Fetched ${result.rows.length} users.`);
-
-    // Return the fetched users as a JSON response.
-    return new Response(JSON.stringify(result.rows), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (error) {
+  if (error) {
     console.error('Error fetching users:', error);
     return new Response(JSON.stringify({
       message: 'Failed to fetch users.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.'
+      error: error.message
     }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json'
       }
     });
-  } finally {
-    //realease the database connection
-    await client.end();    
   }
+
+  interface User {
+    name: string;
+    userpassword: string;
+    userrole?: { rolename: string;  }[];
+  }
+  const users = data as User[];
+
+  const result = data.map(user => ({
+    name: user.name,
+    userpassword: user.userpassword,
+    rolename: user.userrole?.[0]?.rolename
+  }));
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
 };

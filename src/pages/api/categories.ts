@@ -1,65 +1,35 @@
-// This file will contain an Astro API route to fetch products from your Supabase PostgreSQL database.
-
-import 'dotenv/config'; //imports the variables from the .env file
-import { Client } from 'pg';
+// src/pages/api/categories.ts
+import { createClient } from '@supabase/supabase-js';
 import type { APIRoute } from 'astro';
+import 'dotenv/config';
 
-
-const DATABASE_URL = process.env.DATABASE_URL;
-
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const GET: APIRoute = async () => {
-  // Basic validation: Check if the DATABASE_URL environment variable is set.
-  if (!DATABASE_URL) {
-    console.error('DATABASE_URL environment variable is not set.');
+  const { data, error } = await supabase
+    .from('categories')
+    .select('categoryid, categoryname')
+    .order('categoryname');
+
+  if (error) {
+    console.error('Error fetching categories:', error);
     return new Response(JSON.stringify({
-      message: 'Database connection configuration missing. Please set DATABASE_URL environment variable.'
+      message: 'Failed to fetch categories.',
+      error: error.message,
     }), {
       status: 500,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
   }
 
-  // Create a new PostgreSQL client instance using the connection string.
-  const client = new Client({
-    connectionString: DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false 
-    }
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
-
-  try {
-    
-    await client.connect();
-
-    const result = await client.query(
-        'SELECT C.categoryid, C.categoryname FROM categories C ORDER BY categoryname;'
-    );
-
-    console.log(`Fetched ${result.rows.length} categories.`);
-
-    // Return the fetched products as a JSON response.
-    return new Response(JSON.stringify(result.rows), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return new Response(JSON.stringify({
-      message: 'Failed to fetch products.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } finally {
-    //realease the database connection
-    await client.end();    
-  }
 };

@@ -1,65 +1,60 @@
-// This file will contain an Astro API route to fetch products from your Supabase PostgreSQL database.
-
-import 'dotenv/config'; //imports the variables from the .env file
-import { Client } from 'pg';
+// src/pages/api/products.ts
+import { createClient } from '@supabase/supabase-js';
 import type { APIRoute } from 'astro';
+import 'dotenv/config';
 
-
-const DATABASE_URL = process.env.DATABASE_URL;
-
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const GET: APIRoute = async () => {
-  // Basic validation: Check if the DATABASE_URL environment variable is set.
-  if (!DATABASE_URL) {
-    console.error('DATABASE_URL environment variable is not set.');
-    return new Response(JSON.stringify({
-      message: 'Database connection configuration missing. Please set DATABASE_URL environment variable.'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      productid,
+      productname,
+      price,
+      measureunits (
+        measureunit
+      ),
+      categories (
+        categoryname
+      )
+    `)
+    .order('productname', { ascending: true });
 
-  // Create a new PostgreSQL client instance using the connection string.
-  const client = new Client({
-    connectionString: DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false 
-    }
-  });
-
-  try {
-    
-    await client.connect();
-
-    const result = await client.query(
-        'SELECT P.productid, P.productname, P.price, M.measureunit, C.categoryname FROM products P JOIN categories C ON P.categoryid = C.categoryid JOIN measureunits M ON P.measureunit = M.measureunitid ORDER BY productName;'
-    );
-
-    console.log(`Fetched ${result.rows.length} products.`);
-
-    // Return the fetched products as a JSON response.
-    return new Response(JSON.stringify(result.rows), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (error) {
+  if (error) {
     console.error('Error fetching products:', error);
     return new Response(JSON.stringify({
       message: 'Failed to fetch products.',
-      error: error instanceof Error ? error.message : 'An unknown error occurred.'
+      error: error.message
     }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
-  } finally {
-    //realease the database connection
-    await client.end();    
   }
+
+  interface Product {
+  productid: number;
+  productname: string;
+  price: number;
+  measureunits?: { measureunit: string; }[];
+  categories?: { categoryname: string; }[];
+}
+const products = data as Product[];
+
+
+  // Flatten related data if needed
+  const result = products.map((p : Product) => ({
+    productid: p.productid,
+    productname: p.productname,
+    price: p.price,
+    measureunit: p.measureunits?.[0]?.measureunit,
+    categoryname: p.categories?.[0]?.categoryname
+  }));
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
 };
