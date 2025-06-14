@@ -1,16 +1,20 @@
 ---
+import  Layout  from '../layouts/layout.astro';
 
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout>
+	<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+      <h1 class="text-4xl font-bold text-indigo-700 mb-4">
+        Welcome to Your Order System!
+      </h1>
+      <p class="text-lg text-gray-600">
+        Tailwind CSS is working! This is a test.
+      </p>
+      <button class="mt-6 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">
+        Click Me
+      </button>
+    </div>
+  </div>
+</Layout>
